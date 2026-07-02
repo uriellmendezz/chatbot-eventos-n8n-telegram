@@ -18,7 +18,6 @@ Este repositorio contiene la configuración y flujos para desplegar una instanci
 *   `workflow.json`: Contiene el flujo de n8n exportado.
 *   `database/`: Scripts de inicialización de la base de datos PostgreSQL en Supabase.
 *   `index.html`: Panel web / dashboard de eventos.
-*   `dashboard.html`: Vista de respaldo del panel de eventos.
 *   `documentacion/`: Documentación técnica detallada del proyecto.
 
 Para más detalles sobre la arquitectura de sistemas y el funcionamiento de los flujos, consulta la [Documentación del Contexto del Proyecto](documentacion/contexto_proyecto.md).
