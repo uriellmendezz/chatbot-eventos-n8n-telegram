@@ -27,5 +27,6 @@ RUN chmod +x /home/node/start.sh
 
 USER 1000
 
-# Comando de inicio personalizado para auto-importar flujos
+# Reset entrypoint and run start.sh directly
+ENTRYPOINT []
 CMD ["/home/node/start.sh"]
