@@ -1,0 +1,1732 @@
+{
+    "name": "Chatbot v3 - TP2",
+    "nodes": [
+        {
+            "parameters": {
+                "amount": 2,
+                "unit": "minutes"
+            },
+            "id": "169d4148-c589-4776-a671-50705f56ba7e",
+            "name": "Delay 2min B→C",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [
+                688,
+                1248
+            ],
+            "webhookId": "d2m-delay-b-to-c-webhook-0001"
+        },
+        {
+            "parameters": {
+                "jsCode": "return [\n  { json: { url: \u0027https://circuitogastronomico.com.ar/category/novedades-eventos/feed/\u0027, source: \u0027Circuito Gastronómico\u0027, categoria: \u0027gastronomia\u0027, tipo: \u0027rss\u0027 } },\n  { json: { url: \u0027https://cordobabeat.com/feed/\u0027, source: \u0027CBA Beat\u0027, categoria: \u0027electronica\u0027, tipo: \u0027rss\u0027 } }\n];"
+            },
+            "id": "19f9f2ec-d8eb-4fb8-bad6-39f84a595d17",
+            "name": "Rama A: URLs RSS1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -512,
+                1056
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.url }}",
+                "options": {
+                    "response": {
+                        "response": {
+                            "responseFormat": "text"
+                        }
+                    },
+                    "timeout": 15000
+                }
+            },
+            "id": "71ebf159-deb4-4dd8-b442-f52f4a48d172",
+            "name": "Rama A: HTTP RSS1",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -320,
+                1056
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nconst result = [];\nfor (const item of items) {\n  const xml = item.json.data || item.json.body || \u0027\u0027;\n  if (!xml) continue;\n  const source = item.json.source || \u0027RSS\u0027;\n  const categoria = item.json.categoria || \u0027cultura\u0027;\n  const itemRegex = /\u003citem\u003e([\\s\\S]*?)\u003c\\/item\u003e/gi;\n  let match;\n  while ((match = itemRegex.exec(xml)) !== null) {\n    const block = match[1];\n    const titleMatch = block.match(/\u003ctitle\u003e\u003c!\\[CDATA\\[([\\s\\S]*?)\\]\\]\u003e\u003c\\/title\u003e|\u003ctitle\u003e([^\u003c]*)\u003c\\/title\u003e/);\n    const linkMatch = block.match(/\u003clink\u003e([^\u003c]*)\u003c\\/link\u003e|\u003cguid[^\u003e]*\u003e([^\u003c]*)\u003c\\/guid\u003e/);\n    const dateMatch = block.match(/\u003cpubDate\u003e([^\u003c]*)\u003c\\/pubDate\u003e/);\n    const descMatch = block.match(/\u003cdescription\u003e\u003c!\\[CDATA\\[([\\s\\S]*?)\\]\\]\u003e\u003c\\/description\u003e|\u003cdescription\u003e([^\u003c]*)\u003c\\/description\u003e/);\n    const titulo = (titleMatch?.[1] || titleMatch?.[2] || \u0027\u0027).trim();\n    const link = (linkMatch?.[1] || linkMatch?.[2] || \u0027\u0027).trim();\n    const fechaRaw = (dateMatch?.[1] || \u0027\u0027).trim();\n    const descripcion = (descMatch?.[1] || descMatch?.[2] || \u0027\u0027).replace(/\u003c[^\u003e]+\u003e/g, \u0027\u0027).substring(0, 300).trim();\n    if (titulo \u0026\u0026 link) {\n      result.push({\n        json: {\n          titulo,\n          fecha_original: fechaRaw,\n          fecha_iso: fechaRaw ? new Date(fechaRaw).toISOString() : null,\n          categoria,\n          ubicacion: \u0027Córdoba\u0027,\n          link,\n          fuente: source,\n          descripcion,\n          fuente_tipo: \u0027rss\u0027\n        }\n      });\n    }\n  }\n}\nreturn result.length \u003e 0 ? result : [{ json: { _skip: true } }];"
+            },
+            "id": "b2def6e4-23a0-435e-a5fd-f74bc2785805",
+            "name": "Rama A: Parsear RSS1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -112,
+                1056
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "return [\n  { json: { url: \u0027https://www.movidaelectronica.com.ar/ej2000/agenda.html\u0027, source: \u0027Movida Electrónica\u0027, categoria: \u0027electronica\u0027, tipo: \u0027html\u0027 } },\n  { json: { url: \u0027https://cordobaturismo.gov.ar/cronograma-de-eventos/\u0027, source: \u0027Córdoba Turismo\u0027, categoria: \u0027cultura\u0027, tipo: \u0027html\u0027 } }\n];"
+            },
+            "id": "111d1837-984b-42a7-990c-71ca83dcfc79",
+            "name": "Rama B: URLs HTML1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -512,
+                1248
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.url }}",
+                "options": {
+                    "response": {
+                        "response": {
+                            "responseFormat": "text"
+                        }
+                    },
+                    "timeout": 15000
+                }
+            },
+            "id": "b618ac1a-d497-45af-bbab-8c9089ff9842",
+            "name": "Rama B: HTTP HTML1",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -320,
+                1248
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nconst parsedSources = [];\nfor (const item of items) {\n  const html = item.json.data || item.json.body || \u0027\u0027;\n  if (!html) continue;\n  let text = html\n    .replace(/\u003cscript[\\s\\S]*?\u003c\\/script\u003e/gi, \u0027\u0027)\n    .replace(/\u003cstyle[\\s\\S]*?\u003c\\/style\u003e/gi, \u0027\u0027)\n    .replace(/\u003c[^\u003e]+\u003e/g, \u0027 \u0027)\n    .replace(/\\s+/g, \u0027 \u0027)\n    .trim()\n    .substring(0, 8000);\n  if (text.length \u003e 50) {\n    parsedSources.push({ source: item.json.source || \u0027Web\u0027, categoria: item.json.categoria || \u0027cultura\u0027, text });\n  }\n}\nreturn [{ json: { parsedSources } }];"
+            },
+            "id": "7ca6588d-d528-47b4-bfea-6677c12fae9a",
+            "name": "Rama B: Parse HTML1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -112,
+                1248
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const { parsedSources } = $input.first().json;\n\n// Schema versioning: alerta si no se extrajo contenido útil\nif (!parsedSources || parsedSources.length === 0) {\n  return [{ json: { _schema_error: true, mensaje: \u0027Rama B: 0 fuentes parseadas. Posible cambio de estructura HTML.\u0027, rama: \u0027B\u0027 } }];\n}\n\nconst contenido = parsedSources.map(s =\u003e `=== FUENTE: ${s.source} (${s.categoria}) ===\\n${s.text}\\n`).join(\u0027\\n\u0027);\nconst ahora = new Date();\nconst fechaStr = ahora.toLocaleDateString(\u0027es-AR\u0027, { weekday: \u0027long\u0027, year: \u0027numeric\u0027, month: \u0027long\u0027, day: \u0027numeric\u0027 });\nconst userPrompt = `Analiza el contenido de sitios web de eventos de Córdoba, Argentina.\\nHoy es ${fechaStr}.\\n\\nTu tarea:\\n1. Identificar EVENTOS que ocurran desde hoy hasta dentro de 21 días. Ignora eventos pasados.\\n2. Por cada evento extraer: titulo, fecha_original, fecha_iso (ISO 8601 o null), categoria, ubicacion, link, fuente, descripcion.\\n3. Tu respuesta debe ser ÚNICAMENTE un array JSON válido. Sin markdown extra. SOLO JSON puro.\\n4. Máximo 15 eventos.\\n5. Si no hay eventos futuros, devolvé: []\\n\\nFormato JSON esperado:\\n[{ \\\"titulo\\\": \\\"...\\\", \\\"fecha_original\\\": \\\"...\\\", \\\"fecha_iso\\\": \\\"...\\\", \\\"categoria\\\": \\\"...\\\", \\\"ubicacion\\\": \\\"...\\\", \\\"link\\\": \\\"...\\\", \\\"fuente\\\": \\\"...\\\", \\\"descripcion\\\": \\\"...\\\", \\\"fuente_tipo\\\": \\\"html\\\" }]\\n\\nCONTENIDO:\\n${contenido}`;\nreturn [{ json: { userPrompt } }];"
+            },
+            "id": "eb6b876c-5b0c-49b8-a34e-0cdd942d1af0",
+            "name": "Rama B: Prompt Extracción1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                80,
+                1248
+            ]
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "={{ $json.userPrompt }}",
+                "options": {
+                    "systemMessage": "Sos un extractor de datos de eventos. Tu única salida permitida es JSON puro y válido. Sin texto extra, sin markdown, sin explicaciones."
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 3.1,
+            "position": [
+                288,
+                1248
+            ],
+            "id": "c8eb2c23-add3-460b-b637-4755f13ef912",
+            "name": "Rama B: AI Extractor1"
+        },
+        {
+            "parameters": {
+                "model": "llama-3.3-70b-versatile",
+                "options": {
+                    "maxTokensToSample": 6000
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+            "typeVersion": 1,
+            "position": [
+                288,
+                1408
+            ],
+            "id": "e7e5b123-6ffc-409f-894e-2097bd377f54",
+            "name": "Groq Extractor Rama B1",
+            "credentials": {
+                "groqApi": {
+                    "id": "kE1IE7XOdKOce8go",
+                    "name": "Groq account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const output = $input.first().json.output || \u0027\u0027;\nlet eventos = [];\ntry {\n  const match = output.match(/\\[[\\s\\S]*\\]/);\n  if (match) eventos = JSON.parse(match[0]);\n} catch (e) {}\nreturn eventos.length \u003e 0 ? eventos.map(e =\u003e ({ json: e })) : [{ json: { _skip: true } }];"
+            },
+            "id": "85e894b0-1cdf-4647-80c4-94bd60cec470",
+            "name": "Rama B: Parsear JSON1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                480,
+                1248
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "return [\n  {\n    json: {\n      url: \u0027https://www.atrapalo.com.ar/actividades/cordoba/gastronomia/\u0027,\n      source: \u0027Atrápalo Gastronomía\u0027,\n      categoria: \u0027gastronomia\u0027,\n      tipo: \u0027xhr\u0027\n    }\n  },\n  {\n    json: {\n      url: \u0027https://www.atrapalo.com.ar/actividades/cordoba/deportes-y-aventuras/\u0027,\n      source: \u0027Atrápalo Deportes\u0027,\n      categoria: \u0027deportes\u0027,\n      tipo: \u0027xhr\u0027\n    }\n  }\n];"
+            },
+            "id": "59b10fbb-e966-463d-8b89-503f3ee93e59",
+            "name": "Rama C: URLs XHR1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -512,
+                1456
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.url }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "User-Agent",
+                            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+                        },
+                        {
+                            "name": "Accept",
+                            "value": "application/json, text/html, */*"
+                        }
+                    ]
+                },
+                "options": {
+                    "response": {
+                        "response": {
+                            "responseFormat": "text"
+                        }
+                    },
+                    "timeout": 20000
+                }
+            },
+            "id": "d2e6d856-4dbf-40f4-8218-b9920766238a",
+            "name": "Rama C: HTTP XHR1",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -320,
+                1456
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 3000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nconst parsedSources = [];\nfor (const item of items) {\n  const html = item.json.data || item.json.body || \u0027\u0027;\n  if (!html) continue;\n  let text = html\n    .replace(/\u003cscript[\\s\\S]*?\u003c\\/script\u003e/gi, \u0027\u0027)\n    .replace(/\u003cstyle[\\s\\S]*?\u003c\\/style\u003e/gi, \u0027\u0027)\n    .replace(/\u003c[^\u003e]+\u003e/g, \u0027 \u0027)\n    .replace(/\\s+/g, \u0027 \u0027)\n    .trim()\n    .substring(0, 8000);\n  if (text.length \u003e 50) {\n    parsedSources.push({ source: item.json.source || \u0027Web\u0027, categoria: item.json.categoria || \u0027cultura\u0027, text });\n  }\n}\nreturn [{ json: { parsedSources } }];"
+            },
+            "id": "55c4200b-5521-43a2-86e4-9b89393c99de",
+            "name": "Rama C: Parse HTML/XHR1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -112,
+                1456
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const { parsedSources } = $input.first().json;\nconst contenido = parsedSources.map(s =\u003e `=== FUENTE: ${s.source} (${s.categoria}) ===\\n${s.text}\\n`).join(\u0027\\n\u0027);\nconst ahora = new Date();\nconst fechaStr = ahora.toLocaleDateString(\u0027es-AR\u0027, { weekday: \u0027long\u0027, year: \u0027numeric\u0027, month: \u0027long\u0027, day: \u0027numeric\u0027 });\nconst userPrompt = `Analiza el contenido de sitios de actividades de Córdoba, Argentina.\\nHoy es ${fechaStr}.\\n\\nExtrae EVENTOS o ACTIVIDADES que ocurran desde hoy hasta dentro de 21 días.\\nDevolvé ÚNICAMENTE un array JSON válido (sin markdown extra):\\n[{ \\\"titulo\\\": \\\"...\\\", \\\"fecha_original\\\": \\\"...\\\", \\\"fecha_iso\\\": \\\"...\\\", \\\"categoria\\\": \\\"gastronomia|deportes|shows\\\", \\\"ubicacion\\\": \\\"...\\\", \\\"link\\\": \\\"...\\\", \\\"fuente\\\": \\\"...\\\", \\\"descripcion\\\": \\\"...\\\", \\\"fuente_tipo\\\": \\\"xhr\\\" }]\\n\\nCONTENIDO:\\n${contenido}`;\nreturn [{ json: { userPrompt } }];"
+            },
+            "id": "4707ba04-2890-4b0d-843c-76df0f05f0ec",
+            "name": "Rama C: Prompt Extracción1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                80,
+                1456
+            ]
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "={{ $json.userPrompt }}",
+                "options": {
+                    "systemMessage": "Sos un extractor de datos de eventos. Tu única salida permitida es JSON puro y válido."
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 3.1,
+            "position": [
+                288,
+                1456
+            ],
+            "id": "a3517758-5832-4316-b85f-b2bd559fac4d",
+            "name": "Rama C: AI Extractor1"
+        },
+        {
+            "parameters": {
+                "model": "llama-3.3-70b-versatile",
+                "options": {
+                    "maxTokensToSample": 6000
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+            "typeVersion": 1,
+            "position": [
+                288,
+                1616
+            ],
+            "id": "405fbfed-77cc-426e-a26b-681a29f4fa30",
+            "name": "Groq Extractor Rama C1",
+            "credentials": {
+                "groqApi": {
+                    "id": "kE1IE7XOdKOce8go",
+                    "name": "Groq account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const output = $input.first().json.output || \u0027\u0027;\nlet eventos = [];\ntry {\n  const match = output.match(/\\[[\\s\\S]*\\]/);\n  if (match) eventos = JSON.parse(match[0]);\n} catch (e) {}\nreturn eventos.length \u003e 0 ? eventos.map(e =\u003e ({ json: e })) : [{ json: { _skip: true } }];"
+            },
+            "id": "0a8a7813-998e-40ea-bbb0-bfec7e636564",
+            "name": "Rama C: Parsear JSON1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                480,
+                1456
+            ]
+        },
+        {
+            "parameters": {
+                "numberInputs": 3
+            },
+            "id": "069bcd43-ed6f-4893-ab4d-6a543cc0dc9a",
+            "name": "Merge: Unificar Todas las Ramas1",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3,
+            "position": [
+                688,
+                1408
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const ahora = new Date();\nconst items = $input.all();\n\nconst validos = items\n  .filter(item =\u003e {\n    const e = item.json;\n    if (!e.titulo) return false; \n    if (e._skip || e._empty) return false;\n    \n    if (e.fecha_iso) {\n      try {\n        const fecha = new Date(e.fecha_iso);\n        if (isNaN(fecha.getTime())) return true;\n        if (fecha \u003c ahora) return false;\n      } catch (err) {}\n    }\n    return true;\n  })\n  .map(item =\u003e ({\n    json: {\n      titulo: String(item.json.titulo || \u0027\u0027).substring(0, 500),\n      fecha_original: String(item.json.fecha_original || \u0027\u0027),\n      fecha_iso: item.json.fecha_iso || null,\n      categoria: String(item.json.categoria || \u0027cultura\u0027),\n      ubicacion: String(item.json.ubicacion || \u0027Córdoba\u0027).substring(0, 300),\n      link: item.json.link ? String(item.json.link).substring(0, 1000) : \u0027\u0027,\n      fuente: String(item.json.fuente || \u0027Web\u0027).substring(0, 100),\n      descripcion: String(item.json.descripcion || \u0027\u0027).substring(0, 1000),\n      fuente_tipo: String(item.json.fuente_tipo || \u0027http\u0027)\n    }\n  }));\n\n// Schema versioning: alerta al admin si se extraen 0 eventos válidos\nif (validos.length === 0) {\n  return [{ json: { _empty: true, total: 0 } }];\n}\nreturn validos;"
+            },
+            "id": "2422b334-c06e-4311-b849-21e7f05e0fb8",
+            "name": "Code: Estandarizar y Filtrar1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                880,
+                1344
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-not-empty",
+                            "leftValue": "={{ $json._empty }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "notEquals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "2d44f6fd-f973-4f93-870e-381a5fb24645",
+            "name": "IF Hay Eventos para Guardar1",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1088,
+                1344
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://telegram-proxy-hb1r.vercel.app/api/telegram?token={{ $env.TELEGRAM_BOT_TOKEN }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\"chat_id\": 5784376241, \"text\": \"✅ *ETL Córdoba Eventos — Completado*\\n\\nScraping de las 4 ramas finalizado.\\nSupabase actualizado con eventos frescos.\\nEventos viejos eliminados automáticamente.\\n\\n_Próxima ejecución en 3 días._\", \"parse_mode\": \"Markdown\"}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "691a7e50-783e-4bd0-bcfe-0a592da402dc",
+            "name": "Telegram: ETL Completado (Admin)1",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1680,
+                1280
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://telegram-proxy-hb1r.vercel.app/api/telegram?token={{ $env.TELEGRAM_BOT_TOKEN }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\"chat_id\": 5784376241, \"text\": \"⚠️ *ETL Sin Eventos*\\n\\nEl scraping de todas las ramas no encontró eventos válidos para los próximos 21 días.\\n\\nRevisar:\\n- URLs de las fuentes\\n- Cambios de estructura HTML en los sitios\", \"parse_mode\": \"Markdown\"}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "83cd13e2-6f2c-4895-a58d-0e9300d75e24",
+            "name": "Telegram: ETL Sin Eventos (Admin)1",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1296,
+                1488
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "tableId": "eventos",
+                "dataToSend": "autoMapInputData"
+            },
+            "id": "f5781523-a97e-408e-bc1d-b8c270f4ccea",
+            "name": "Supabase: Upsert Eventos",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1296,
+                1280
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "supabaseApi": {
+                    "id": "zjGbF0q1pzbTgHew",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "delete",
+                "tableId": "eventos",
+                "filters": {
+                    "conditions": [
+                        {
+                            "keyName": "fecha_iso",
+                            "condition": "lt",
+                            "keyValue": "=={{ $now.toISO() }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1488,
+                1280
+            ],
+            "id": "463155bb-fd9e-4dff-ad01-6df72d2e5c5d",
+            "name": "Delete a row",
+            "alwaysOutputData": true,
+            "credentials": {
+                "supabaseApi": {
+                    "id": "zjGbF0q1pzbTgHew",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "daysInterval": 2
+                        }
+                    ]
+                }
+            },
+            "id": "f9c1fcc6-e681-4828-a56d-cd2c3189f5b0",
+            "name": "Schedule Trigger (Cada 2 días)",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                -736,
+                1344
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "eventos",
+                "limit": 10
+            },
+            "type": "n8n-nodes-base.supabaseTool",
+            "typeVersion": 1,
+            "position": [
+                416,
+                800
+            ],
+            "id": "b06691b5-9979-4c07-b34c-c830aff3c191",
+            "name": "Get many rows in Supabase1",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "zjGbF0q1pzbTgHew",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sessionIdType": "customKey",
+                "sessionKey": "={{ $(\u0027Telegram Trigger1\u0027).first().json.message.chat.id }}",
+                "contextWindowLength": 2
+            },
+            "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+            "typeVersion": 1.2,
+            "position": [
+                272,
+                800
+            ],
+            "id": "469276a5-a4c9-4658-bd54-dbcb43f4e9cc",
+            "name": "Window Buffer Memory1"
+        },
+        {
+            "parameters": {
+                "model": "llama-3.1-8b-instant",
+                "options": {
+                    "maxTokensToSample": 1024
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+            "typeVersion": 1,
+            "position": [
+                176,
+                800
+            ],
+            "id": "8bc901f2-1d57-4bd6-9b1e-ca6865b8f1b2",
+            "name": "Groq LLaMA3 Agent1",
+            "credentials": {
+                "groqApi": {
+                    "id": "kE1IE7XOdKOce8go",
+                    "name": "Groq account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "={{ $(\u0027Extraer Texto Agrupado1\u0027).first().json.message.text }}\n\n[CONTEXTO DE BÚSQUEDA DETECTADO]\nCategoría: {{ $(\u0027Clasificador de Intent\u0027).first().json.intent_categoria || \u0027sin filtro\u0027 }}\nRango temporal: {{ $(\u0027Clasificador de Intent\u0027).first().json.intent_fecha || \u0027sin filtro\u0027 }}\nZona: {{ $(\u0027Clasificador de Intent\u0027).first().json.intent_zona || \u0027sin filtro\u0027 }}",
+                "options": {
+                    "systemMessage": "Sos \"Colo\", asistente virtual cordobés, simpático y servicial. Hablás siempre con modismos de Córdoba, Argentina, usando \"vos\". Ayudás a buscar eventos en la ciudad.\n\nTus capacidades:\n- Usá la herramienta \"Get many rows in Supabase\" para obtener eventos reales. Categorías: shows, electronica, cultura, gastronomia, deportes.\n- REGLA CRÍTICA: La herramienta NO acepta filtros JSON. Invocala directamente sin parámetros extra. Luego filtrá vos los resultados por categoría, fecha y zona según el CONTEXTO DE BÚSQUEDA DETECTADO que viene en el mensaje.\n- Si el contexto tiene intent_categoria, mostrá solo eventos de esa categoría.\n- Si el contexto tiene intent_fecha=\u0027hoy\u0027, filtrá por fecha de hoy. Si es \u0027finde\u0027, mostrá sábado y domingo. Si es \u0027semana\u0027, mostrá los próximos 7 días.\n- Si el contexto tiene intent_zona, filtrá por eventos cuya ubicacion mencione esa zona.\n\nReglas de respuesta:\n1. Si encontrás eventos, mostralos en este formato estricto de Telegram Markdown:\n🎉 *Eventos de [CATEGORÍA] en Córdoba*\n1. [Nombre del Evento](URL)\n   📅 *Fecha:* [fecha_original]\n   📍 *Lugar:* [ubicacion]\n   📝 [Descripción breve]\n- Máximo 5 eventos. Títulos SIEMPRE hipervínculos `[Texto](URL)`. Usa negritas (`*`) para resaltar. No uses HTML.\n2. Si no hay eventos, decilo con onda cordobesa y sugerí un plan clásico (un fernet en Güemes, paseo por la Costanera, etc.).\n3. Prohibido inventar eventos o links. Si preguntan algo ajeno a Córdoba, redirigí con buena onda.\n4. Hoy es {{ $now.setZone(\u0027America/Argentina/Cordoba\u0027).format(\u0027dddd DD/MM/YYYY\u0027) }}."
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 3.1,
+            "position": [
+                176,
+                608
+            ],
+            "id": "37df147e-4c36-4124-b6f6-3c3a8a18b4a4",
+            "name": "AI Agent Colo1",
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-msg-valid",
+                            "leftValue": "={{ $json.message?.text ?? \u0027\u0027 }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "b3d0a12a-9a01-4c8c-9e3e-3312e90bc306",
+            "name": "IF Mensaje Válido1",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -16,
+                624
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const chatId = $input.first().json.chatId;\nconst text = $input.first().json.text;\nif (!text || text.trim() === \u0027\u0027) {\n  return [{ json: { message: { text: \u0027Hola\u0027, chat: { id: chatId } } } }];\n}\nreturn [{ json: { message: { text: text, chat: { id: chatId } } } }];"
+            },
+            "id": "3955079e-6b71-41c5-af78-5079da9eb734",
+            "name": "Extraer Texto Agrupado1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -192,
+                624
+            ]
+        },
+        {
+            "parameters": {},
+            "id": "8ed0fee7-6580-469a-aa1c-f5c7e11111c4",
+            "name": "Esperar 5 segundos1",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [
+                -368,
+                624
+            ],
+            "webhookId": "REPLACE_WEBHOOK_ID_2"
+        },
+        {
+            "parameters": {
+                "jsCode": "const chatId = $input.first().json.message.chat.id;\nconst text = $input.first().json.message.text || \u0027\u0027;\nreturn [{ json: { chatId, text, originalMessage: $input.first().json.message } }];"
+            },
+            "id": "8554fc1d-9bf3-4413-a131-874fb889801c",
+            "name": "Agrupar Mensajes (Buffer)1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -576,
+                624
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "return [{ json: $input.first().json.body }];"
+            },
+            "id": "ebf8a2b8-b51f-45b2-825b-bcd3fa82a5ed",
+            "name": "Telegram Trigger1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -960,
+                624
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// TP2 — Nodo: Detectar Comandos Especiales\n// Intercepta /start, /help, /metrics antes del flujo de IA\nconst text = ($input.first().json.message?.text || \u0027\u0027).trim();\nconst chatId = $input.first().json.message?.chat?.id;\nconst comando = text.split(\u0027 \u0027)[0].toLowerCase();\n\nconst esComando = [\u0027/start\u0027, \u0027/help\u0027, \u0027/metrics\u0027].includes(comando);\n\nreturn [{\n  json: {\n    ...($input.first().json),\n    es_comando: esComando,\n    comando: esComando ? comando : null\n  }\n}];"
+            },
+            "id": "72b2b7c0-7b2f-4745-9dd8-95f4bb600f8f",
+            "name": "Detectar Comandos Especiales",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -768,
+                464
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-is-command",
+                            "leftValue": "={{ $json.es_comando }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "27400814-e81d-461e-9d99-98e7e8239168",
+            "name": "IF Es Comando Especial",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -576,
+                464
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// TP2 — Generar respuesta para comandos especiales\nconst chatId = $input.first().json.message?.chat?.id;\nconst comando = $input.first().json.comando;\n\nlet texto = \u0027\u0027;\n\nif (comando === \u0027/start\u0027) {\n  texto = `👋 *¡Hola! Soy Colo*, tu asistente de eventos en Córdoba 🎉\n\nPuedo ayudarte a encontrar eventos por:\n• 🎭 *Categoría*: shows, electrónica, cultura, gastronomía, deportes\n• 📅 *Cuándo*: hoy, este finde, esta semana, o una fecha específica\n• 📍 *Dónde*: Güemes, Nueva Córdoba, Centro, etc.\n\n*Ejemplos de consultas:*\n\\- \"música este finde\"\n\\- \"teatro esta semana en el centro\"\n\\- \"gastronomía mañana\"\n\\- \"algo de cultura hoy en güemes\"\n\nUsá /help para ver todos los comandos disponibles.`;\n} else if (comando === \u0027/help\u0027) {\n  texto = `ℹ️ *Comandos disponibles:*\n\n/start — Bienvenida e instrucciones\n/help — Esta ayuda\n/metrics — Estadísticas del bot (solo admin)\n\n*Cómo pedirme eventos:*\nPodés combinar categoría + tiempo + zona en una sola frase:\n\\- \"shows de electrónica este sábado en nueva córdoba\"\n\\- \"qué hay de gastronomía el viernes\"\n\\- \"deportes cerca del centro esta semana\"\n\n*Categorías disponibles:*\nshows · electronica · cultura · gastronomia · deportes`;\n} else if (comando === \u0027/metrics\u0027) {\n  texto = `📊 *Métricas del bot* (datos básicos via Telegram):\n\n_Consultando estadísticas en tiempo real..._\n\n⚠️ Para métricas completas, visitá el dashboard:\nhttps://[TU-USUARIO].github.io/[TU-REPO]/`;\n}\n\nreturn [{ json: { chatId, texto_respuesta: texto, comando } }];"
+            },
+            "id": "24063bb7-f7b6-40c2-8682-909e17a206d7",
+            "name": "Generar Respuesta Comando",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -368,
+                336
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://telegram-proxy-hb1r.vercel.app/api/telegram?token={{ $env.TELEGRAM_BOT_TOKEN }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ chat_id: $json.chatId, text: $json.texto_respuesta, parse_mode: \u0027Markdown\u0027 }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "8fdf522e-4407-4f13-a0e9-353b35eda5e8",
+            "name": "Telegram Responder Comando",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -192,
+                336
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "tableId": "queries_log",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "chat_id",
+                            "fieldValue": "={{ String($json.chatId) }}"
+                        },
+                        {
+                            "fieldId": "ts",
+                            "fieldValue": "={{ $now.toISO() }}"
+                        },
+                        {
+                            "fieldId": "mensaje_raw",
+                            "fieldValue": "={{ $json.comando }}"
+                        },
+                        {
+                            "fieldId": "es_comando",
+                            "fieldValue": "=true"
+                        },
+                        {
+                            "fieldId": "comando",
+                            "fieldValue": "={{ $json.comando }}"
+                        },
+                        {
+                            "fieldId": "eventos_devueltos",
+                            "fieldValue": "=0"
+                        },
+                        {
+                            "fieldId": "resultado_count",
+                            "fieldValue": "=0"
+                        }
+                    ]
+                }
+            },
+            "id": "18a0bb46-8e51-40ec-ac09-43f5b96961eb",
+            "name": "Log Comando en Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                -16,
+                336
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "supabaseApi": {
+                    "id": "zjGbF0q1pzbTgHew",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// TP2 — Clasificador de Intent (regex híbrido)\n// Detecta: categoría + rango temporal + zona geográfica\n// Si no detecta nada → marca como ambiguo para que el bot repregunta\n\nconst texto = ($input.first().json.message?.text || \u0027\u0027).toLowerCase();\nconst tsInicio = Date.now();\n\n// --- DIMENSIÓN 1: Categoría ---\nconst mapCategorias = {\n  shows:       /show|recital|música|concierto|banda|teatro|obra|espectáculo|bailanta|cumbia|folkl/i,\n  electronica: /electr|techno|dj|after|boliche|dance|minimal|house|trance/i,\n  cultura:     /cultura|arte|expo|exposición|museo|galería|cine|film|feria|libro|taller|workshop/i,\n  gastronomia: /gastronom|comida|restaurant|chef|cocina|fernet|cerveza|vino|food|bar de|bodega/i,\n  deportes:    /deport|fútbol|básquet|tenis|running|maratón|crossfit|yoga|cycling|gym|cancha/i\n};\nlet intent_categoria = null;\nfor (const [cat, regex] of Object.entries(mapCategorias)) {\n  if (regex.test(texto)) { intent_categoria = cat; break; }\n}\n\n// --- DIMENSIÓN 2: Rango temporal ---\nconst mapFecha = {\n  hoy:    /\\bhoy\\b|esta noche|ahorita|ahora/i,\n  finde:  /fin de semana|finde|este sábado|este domingo|el sáb|el dom/i,\n  semana: /esta semana|próximos días|próxima semana|los próximos|esta semana/i,\n  puntual: /el \\d{1,2}|\\d{1,2}\\/\\d{1,2}|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre/i\n};\nlet intent_fecha = null;\nfor (const [tipo, regex] of Object.entries(mapFecha)) {\n  if (regex.test(texto)) { intent_fecha = tipo; break; }\n}\n\n// --- DIMENSIÓN 3: Zona geográfica ---\nconst mapZonas = {\n  \u0027güemes\u0027:         /güemes|gúemes/i,\n  \u0027nueva córdoba\u0027:  /nueva cba|nueva córdoba|nueva cordoba|providencia/i,\n  \u0027centro\u0027:         /centro|cañada|plaza|san martín|independencia/i,\n  \u0027alberdi\u0027:        /alberdi/i,\n  \u0027cerro\u0027:          /cerro|las rosas|arguello/i,\n  \u0027costanera\u0027:      /costanera|río suquía/i,\n  \u0027villa allende\u0027:  /allende/i\n};\nlet intent_zona = null;\nfor (const [zona, regex] of Object.entries(mapZonas)) {\n  if (regex.test(texto)) { intent_zona = zona; break; }\n}\n\n// --- Determinar si es ambiguo (sin categoría Y sin fecha) ---\n// Si no detectamos ni categoría ni fecha → el bot va a repreguntar\nconst intent_ambiguo = !intent_categoria \u0026\u0026 !intent_fecha;\n\nreturn [{\n  json: {\n    ...($input.first().json),\n    intent_categoria,\n    intent_fecha,\n    intent_zona,\n    intent_ambiguo,\n    ts_inicio: tsInicio\n  }\n}];"
+            },
+            "id": "c490b593-50b3-4ed3-b323-6928c1a26c40",
+            "name": "Clasificador de Intent",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -192,
+                816
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-intent-ambiguo",
+                            "leftValue": "={{ $json.intent_ambiguo }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "notEquals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "cc86e5ff-bd9f-43ac-b8cd-0c9ece74dc2a",
+            "name": "IF Intent Claro",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                -16,
+                816
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://telegram-proxy-hb1r.vercel.app/api/telegram?token={{ $env.TELEGRAM_BOT_TOKEN }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ chat_id: $(\u0027Telegram Trigger1\u0027).first().json.message.chat.id, text: \u0027🤔 *¡Epa, necesito un poco más de info!*\\n\\n¿Qué te copa buscar? Podés decirme:\\n• 🎭 *Categoría*: shows, electrónica, cultura, gastronomía o deportes\\n• 📅 *Cuándo*: hoy, este finde, esta semana\\n• 📍 *Dónde* (opcional): Güemes, centro, Nueva Córdoba, etc.\\n\\n_Ejemplo: \"música este finde\" o \"teatro hoy en el centro\"_\u0027, parse_mode: \u0027Markdown\u0027 }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "01a1deb4-d1dd-46ab-8e2b-07f1745ee3e1",
+            "name": "Telegram Repregunta Intent",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                176,
+                976
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "tableId": "queries_log",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "chat_id",
+                            "fieldValue": "={{ String($(\u0027Telegram Trigger1\u0027).first().json.message.chat.id) }}"
+                        },
+                        {
+                            "fieldId": "ts",
+                            "fieldValue": "={{ $now.toISO() }}"
+                        },
+                        {
+                            "fieldId": "mensaje_raw",
+                            "fieldValue": "={{ $(\u0027Extraer Texto Agrupado1\u0027).first().json.message.text }}"
+                        },
+                        {
+                            "fieldId": "intent_categoria",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_categoria || null }}"
+                        },
+                        {
+                            "fieldId": "intent_fecha",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_fecha || null }}"
+                        },
+                        {
+                            "fieldId": "intent_zona",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_zona || null }}"
+                        },
+                        {
+                            "fieldId": "intent_ambiguo",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_ambiguo || false }}"
+                        },
+                        {
+                            "fieldId": "eventos_devueltos",
+                            "fieldValue": "=0"
+                        },
+                        {
+                            "fieldId": "resultado_count",
+                            "fieldValue": "=0"
+                        },
+                        {
+                            "fieldId": "es_comando",
+                            "fieldValue": "=false"
+                        },
+                        {
+                            "fieldId": "latencia_ms",
+                            "fieldValue": "={{ Date.now() - ($(\u0027Clasificador de Intent\u0027).first().json.ts_inicio || Date.now()) }}"
+                        }
+                    ]
+                }
+            },
+            "id": "d121dd54-0150-491c-95cf-d68e8d02cd1e",
+            "name": "Log Repregunta en Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                368,
+                976
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "supabaseApi": {
+                    "id": "zjGbF0q1pzbTgHew",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-llm-ok",
+                            "leftValue": "={{ $json.output ?? \u0027\u0027 }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "6e487a79-60ee-4056-a89b-e26574f5cda4",
+            "name": "IF Respuesta LLM Válida",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                368,
+                608
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://telegram-proxy-hb1r.vercel.app/api/telegram?token={{ $env.TELEGRAM_BOT_TOKEN }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ chat_id: $(\u0027Telegram Trigger1\u0027).first().json.message.chat.id, text: \u0027😅 *Perdoná, tuve un problema técnico.*\\n\\nNo pude procesar tu pedido esta vez. Probá de nuevo en unos segundos.\u0027, parse_mode: \u0027Markdown\u0027 }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "120dcb11-0c28-4790-b2dd-1c2c7e1e610f",
+            "name": "Telegram Error LLM",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                576,
+                736
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "tableId": "queries_log",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "chat_id",
+                            "fieldValue": "={{ String($(\u0027Telegram Trigger1\u0027).first().json.message.chat.id) }}"
+                        },
+                        {
+                            "fieldId": "ts",
+                            "fieldValue": "={{ $now.toISO() }}"
+                        },
+                        {
+                            "fieldId": "mensaje_raw",
+                            "fieldValue": "={{ $(\u0027Extraer Texto Agrupado1\u0027).first().json.message.text }}"
+                        },
+                        {
+                            "fieldId": "intent_categoria",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_categoria || null }}"
+                        },
+                        {
+                            "fieldId": "intent_fecha",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_fecha || null }}"
+                        },
+                        {
+                            "fieldId": "intent_zona",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_zona || null }}"
+                        },
+                        {
+                            "fieldId": "intent_ambiguo",
+                            "fieldValue": "=false"
+                        },
+                        {
+                            "fieldId": "eventos_devueltos",
+                            "fieldValue": "=0"
+                        },
+                        {
+                            "fieldId": "resultado_count",
+                            "fieldValue": "=0"
+                        },
+                        {
+                            "fieldId": "es_comando",
+                            "fieldValue": "=false"
+                        },
+                        {
+                            "fieldId": "latencia_ms",
+                            "fieldValue": "={{ Date.now() - ($(\u0027Clasificador de Intent\u0027).first().json.ts_inicio || Date.now()) }}"
+                        }
+                    ]
+                }
+            },
+            "id": "a3da5e06-cbf6-484d-8a08-733118c8f94e",
+            "name": "Log Error LLM en Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                576,
+                864
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "supabaseApi": {
+                    "id": "zjGbF0q1pzbTgHew",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://telegram-proxy-hb1r.vercel.app/api/telegram?token={{ $env.TELEGRAM_BOT_TOKEN }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ chat_id: $(\u0027Telegram Trigger1\u0027).first().json.message.chat.id, text: $json.output, parse_mode: \u0027Markdown\u0027 }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "ec2b8243-33b9-4f05-a933-d92fcb5b6a7c",
+            "name": "Telegram Enviar Respuesta1",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                768,
+                608
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "tableId": "queries_log",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "chat_id",
+                            "fieldValue": "={{ String($(\u0027Telegram Trigger1\u0027).first().json.message.chat.id) }}"
+                        },
+                        {
+                            "fieldId": "ts",
+                            "fieldValue": "={{ $now.toISO() }}"
+                        },
+                        {
+                            "fieldId": "mensaje_raw",
+                            "fieldValue": "={{ $(\u0027Extraer Texto Agrupado1\u0027).first().json.message.text }}"
+                        },
+                        {
+                            "fieldId": "intent_categoria",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_categoria || null }}"
+                        },
+                        {
+                            "fieldId": "intent_fecha",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_fecha || null }}"
+                        },
+                        {
+                            "fieldId": "intent_zona",
+                            "fieldValue": "={{ $(\u0027Clasificador de Intent\u0027).first().json.intent_zona || null }}"
+                        },
+                        {
+                            "fieldId": "intent_ambiguo",
+                            "fieldValue": "=false"
+                        },
+                        {
+                            "fieldId": "eventos_devueltos",
+                            "fieldValue": "={{ ($json.output || \u0027\u0027).split(\u0027\\n\u0027).filter(l =\u003e l.match(/^\\d+\\./)).length }}"
+                        },
+                        {
+                            "fieldId": "resultado_count",
+                            "fieldValue": "={{ ($json.output || \u0027\u0027).split(\u0027\\n\u0027).filter(l =\u003e l.match(/^\\d+\\./)).length }}"
+                        },
+                        {
+                            "fieldId": "es_comando",
+                            "fieldValue": "=false"
+                        },
+                        {
+                            "fieldId": "latencia_ms",
+                            "fieldValue": "={{ Date.now() - ($(\u0027Clasificador de Intent\u0027).first().json.ts_inicio || Date.now()) }}"
+                        }
+                    ]
+                }
+            },
+            "id": "22343030-0f05-441c-bf87-8986fffcecc8",
+            "name": "Log Respuesta en Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                960,
+                608
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "supabaseApi": {
+                    "id": "zjGbF0q1pzbTgHew",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "mi-chatbot-seguro/webhook",
+                "responseMode": "onReceived",
+                "options": {}
+            },
+            "id": "7b17fb6c-fd45-4a5e-8f23-2f1faaa33aca",
+            "name": "Telegram Webhook Input",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -1160,
+                624
+            ]
+        }
+    ],
+    "pinData": {
+        "Schedule Trigger (Cada 2 días)": [
+            {
+                "json": {
+                    "timestamp": "2026-06-07T00:00:57.015-04:00",
+                    "Readable date": "June 7th 2026, 12:00:57 am",
+                    "Readable time": "12:00:57 am",
+                    "Day of week": "Sunday",
+                    "Year": "2026",
+                    "Month": "June",
+                    "Day of month": "07",
+                    "Hour": "00",
+                    "Minute": "00",
+                    "Second": "57",
+                    "Timezone": "America/New_York (UTC-04:00)"
+                },
+                "pairedItem": {
+                    "item": 0
+                }
+            }
+        ]
+    },
+    "connections": {
+        "Delay 2min B→C": {
+            "main": [
+                [
+                    {
+                        "node": "Rama C: URLs XHR1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama A: URLs RSS1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama A: HTTP RSS1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama A: HTTP RSS1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama A: Parsear RSS1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama A: Parsear RSS1": {
+            "main": [
+                [
+                    {
+                        "node": "Merge: Unificar Todas las Ramas1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama B: URLs HTML1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama B: HTTP HTML1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama B: HTTP HTML1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama B: Parse HTML1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama B: Parse HTML1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama B: Prompt Extracción1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama B: Prompt Extracción1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama B: AI Extractor1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama B: AI Extractor1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama B: Parsear JSON1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq Extractor Rama B1": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Rama B: AI Extractor1",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama B: Parsear JSON1": {
+            "main": [
+                [
+                    {
+                        "node": "Merge: Unificar Todas las Ramas1",
+                        "type": "main",
+                        "index": 1
+                    },
+                    {
+                        "node": "Delay 2min B→C",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama C: URLs XHR1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama C: HTTP XHR1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama C: HTTP XHR1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama C: Parse HTML/XHR1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama C: Parse HTML/XHR1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama C: Prompt Extracción1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama C: Prompt Extracción1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama C: AI Extractor1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama C: AI Extractor1": {
+            "main": [
+                [
+                    {
+                        "node": "Rama C: Parsear JSON1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq Extractor Rama C1": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Rama C: AI Extractor1",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Rama C: Parsear JSON1": {
+            "main": [
+                [
+                    {
+                        "node": "Merge: Unificar Todas las Ramas1",
+                        "type": "main",
+                        "index": 2
+                    }
+                ]
+            ]
+        },
+        "Merge: Unificar Todas las Ramas1": {
+            "main": [
+                [
+                    {
+                        "node": "Code: Estandarizar y Filtrar1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code: Estandarizar y Filtrar1": {
+            "main": [
+                [
+                    {
+                        "node": "IF Hay Eventos para Guardar1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Hay Eventos para Guardar1": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase: Upsert Eventos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Telegram: ETL Sin Eventos (Admin)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Supabase: Upsert Eventos": {
+            "main": [
+                [
+                    {
+                        "node": "Delete a row",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Delete a row": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram: ETL Completado (Admin)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Schedule Trigger (Cada 2 días)": {
+            "main": [
+                [
+                    {
+                        "node": "Rama A: URLs RSS1",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Rama B: URLs HTML1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get many rows in Supabase1": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "AI Agent Colo1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Window Buffer Memory1": {
+            "ai_memory": [
+                [
+                    {
+                        "node": "AI Agent Colo1",
+                        "type": "ai_memory",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq LLaMA3 Agent1": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "AI Agent Colo1",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Agent Colo1": {
+            "main": [
+                [
+                    {
+                        "node": "IF Respuesta LLM Válida",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Respuesta LLM Válida": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Enviar Respuesta1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Telegram Error LLM",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Enviar Respuesta1": {
+            "main": [
+                [
+                    {
+                        "node": "Log Respuesta en Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Error LLM": {
+            "main": [
+                [
+                    {
+                        "node": "Log Error LLM en Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Mensaje Válido1": {
+            "main": [
+                [
+                    {
+                        "node": "Clasificador de Intent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Clasificador de Intent": {
+            "main": [
+                [
+                    {
+                        "node": "IF Intent Claro",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Intent Claro": {
+            "main": [
+                [
+                    {
+                        "node": "AI Agent Colo1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Telegram Repregunta Intent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Repregunta Intent": {
+            "main": [
+                [
+                    {
+                        "node": "Log Repregunta en Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraer Texto Agrupado1": {
+            "main": [
+                [
+                    {
+                        "node": "IF Mensaje Válido1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Esperar 5 segundos1": {
+            "main": [
+                [
+                    {
+                        "node": "Extraer Texto Agrupado1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Agrupar Mensajes (Buffer)1": {
+            "main": [
+                [
+                    {
+                        "node": "Esperar 5 segundos1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Trigger1": {
+            "main": [
+                [
+                    {
+                        "node": "Agrupar Mensajes (Buffer)1",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Detectar Comandos Especiales",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Detectar Comandos Especiales": {
+            "main": [
+                [
+                    {
+                        "node": "IF Es Comando Especial",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Es Comando Especial": {
+            "main": [
+                [
+                    {
+                        "node": "Generar Respuesta Comando",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generar Respuesta Comando": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Responder Comando",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Responder Comando": {
+            "main": [
+                [
+                    {
+                        "node": "Log Comando en Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Webhook Input": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Trigger1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate",
+        "availableInMCP": false
+    },
+    "versionId": "c4d7b249-2976-45b9-885b-08520b998a70",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "ff5936e5e4d9fe48e773145356d0545b367d942ff3d5da8969ee7b3fa36dbb91"
+    },
+    "nodeGroups": [],
+    "id": "0cCzwBu4CmcQ3iiS",
+    "tags": [
+        {
+            "updatedAt": "2026-06-06T14:03:07.982Z",
+            "createdAt": "2026-06-06T14:03:07.982Z",
+            "id": "ObmG9AzcyEzAw91N",
+            "name": "supabase"
+        },
+        {
+            "updatedAt": "2026-06-18T21:16:13.453Z",
+            "createdAt": "2026-06-18T21:16:13.453Z",
+            "id": "gBHHpJTg2mdOANcL",
+            "name": "tp2"
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+FROM n8nio/n8n:latest
+USER root
+
+# Creamos las carpetas de sistema requeridas para n8n
+RUN mkdir -p /home/node/.n8n && chown -R 1000:1000 /home/node/.n8n
+
+# Puerto requerido por Hugging Face Spaces
+ENV N8N_PORT=7860
+
+# --- RED Y TLS: fixes para HF Spaces ---
+ENV N8N_PROXY_HOPS=1
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+ENV NODE_OPTIONS="--dns-result-order=ipv4first --max-http-header-size=16384"
+ENV N8N_HTTP_TIMEOUT=60000
+ENV N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+
+# --- ACCESO A ENV VARS DESDE NODOS DE n8n ---
+# Esto permite usar $env.VARIABLE en Code nodes y expresiones
+ENV N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+ENV N8N_ENVS_TO_EXPORT=TELEGRAM_BOT_TOKEN,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,GROQ_API_KEY,TELEGRAM_CHAT_ID,N8N_ENCRYPTION_KEY,WEBHOOK_URL,N8N_EDITOR_BASE_URL,ADMIN_CHAT_ID,SUPABASE_PROJECT_URL,SUPABASE_ANON_KEY,APIFY_API_KEY
+ENV N8N_EXPRESSIONS_ALLOWED_ENV_VARS=TELEGRAM_BOT_TOKEN,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,GROQ_API_KEY,TELEGRAM_CHAT_ID,N8N_ENCRYPTION_KEY,WEBHOOK_URL,N8N_EDITOR_BASE_URL,ADMIN_CHAT_ID,SUPABASE_PROJECT_URL,SUPABASE_ANON_KEY,APIFY_API_KEY
+
+# --- COPIA DE WORKFLOWS Y SCRIPT DE ARRANQUE ---
+COPY --chown=1000:1000 workflows /home/node/workflows
+COPY --chown=1000:1000 start.sh /home/node/start.sh
+RUN chmod +x /home/node/start.sh
+
+USER 1000
+
+# Comando de inicio personalizado para auto-importar flujos
+CMD ["/home/node/start.sh"]
