@@ -15,7 +15,7 @@ Este repositorio contiene la configuración y flujos para desplegar una instanci
 
 *   `Dockerfile`: Configuración del contenedor Docker para ejecutar n8n en Hugging Face Spaces.
 *   `start.sh`: Script de arranque del contenedor para importar automáticamente los flujos.
-*   `workflows/`: Contiene el flujo de n8n exportado (`Chatbot v3 - TP2.json`).
+*   `workflow.json`: Contiene el flujo de n8n exportado.
 *   `database/`: Scripts de inicialización de la base de datos PostgreSQL en Supabase.
 *   `frontend/`: Archivos del panel web / dashboard de eventos.
 *   `documentacion/`: Documentación técnica detallada del proyecto.
