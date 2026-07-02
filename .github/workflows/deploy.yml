@@ -1,0 +1,26 @@
+name: Sync to Hugging Face Spaces
+
+on:
+  push:
+    branches: [ main ] # Cambia a 'master' si es el nombre de tu rama principal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Configurar la URL remota utilizando el token guardado en GitHub Secrets
+          # Reemplaza [TU_USUARIO] y [TU_SPACE] con tus datos reales de Hugging Face
+          git remote add hf https://x-token-auth:$HF_TOKEN@huggingface.co/spaces/urielmendez-edu/mi-n8n-automatizacion
+          
+          # Realizar un push forzado para sincronizar completamente el repositorio
+          git push hf main:main --force
