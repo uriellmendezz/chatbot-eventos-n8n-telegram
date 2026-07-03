@@ -35,6 +35,10 @@
       --cyan: #06b6d4;
       --orange: #f97316;
 
+      /* Nuevos accent para salud del sistema */
+      --red-glow: rgba(244, 63, 94, 0.15);
+      --orange-glow: rgba(249, 115, 22, 0.15);
+
       --font-display: 'Plus Jakarta Sans', sans-serif;
       --font-body: 'Inter', sans-serif;
       --radius-lg: 18px;
@@ -785,6 +789,40 @@
         <div class="kpi-value" id="kpi-ambiguo">—</div>
         <div class="kpi-sub">Entradas ambiguas detectadas</div>
       </div>
+
+      <!-- KPI NUEVOS: Salud del Sistema (Integrador) -->
+      <div class="kpi-card" style="border-color: rgba(244,63,94,0.2); background: linear-gradient(135deg, rgba(244,63,94,0.05) 0%, rgba(17,24,39,0.7) 100%);">
+        <div class="kpi-header">
+          <span class="kpi-label" style="color: #f43f5e;">Errores 24h</span>
+          <div class="kpi-icon-wrapper" style="background: var(--red-glow); color: var(--red);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpi-errores-24h" style="color: var(--red);">—</div>
+        <div class="kpi-sub">Errores detectados en 24 horas</div>
+      </div>
+
+      <div class="kpi-card" style="border-color: rgba(249,115,22,0.2); background: linear-gradient(135deg, rgba(249,115,22,0.05) 0%, rgba(17,24,39,0.7) 100%);">
+        <div class="kpi-header">
+          <span class="kpi-label" style="color: #f97316;">Tasa de errores</span>
+          <div class="kpi-icon-wrapper" style="background: var(--orange-glow); color: var(--orange);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpi-tasa-errores" style="color: var(--orange);">—</div>
+        <div class="kpi-sub">Errores / interacciones últimas 24h</div>
+      </div>
+
+      <div class="kpi-card" style="border-color: rgba(6,182,212,0.2); background: linear-gradient(135deg, rgba(6,182,212,0.05) 0%, rgba(17,24,39,0.7) 100%);">
+        <div class="kpi-header">
+          <span class="kpi-label" style="color: #06b6d4;">Tipo error frecuente</span>
+          <div class="kpi-icon-wrapper" style="background: rgba(6,182,212,0.15); color: #06b6d4;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpi-top-error-tipo" style="color: #06b6d4; font-size: 1.1rem;">—</div>
+        <div class="kpi-sub">Tipo de error más frecuente</div>
+      </div>
     </div>
 
     <!-- CHARTS GRID ROW 1 -->
@@ -867,6 +905,55 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- SECCIÓN SALUD DEL SISTEMA (Integrador - Mecanismo 4) -->
+    <div style="margin-top: 48px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+        <div style="width: 4px; height: 24px; background: linear-gradient(180deg, #f43f5e, #f97316); border-radius: 4px;"></div>
+        <h2 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--text); letter-spacing: -0.3px;">
+          🛡️ Salud del Sistema
+        </h2>
+        <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">— Mecanismos de detección de errores · Integrador</span>
+      </div>
+
+      <div class="chart-grid">
+        <!-- Gráfico: Errores por día -->
+        <div class="chart-card" style="border-color: rgba(244,63,94,0.12);">
+          <div class="chart-header-row">
+            <div class="chart-title" style="color: #f43f5e;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+              Línea de tiempo de errores por día
+            </div>
+          </div>
+          <canvas id="chart-errores-dia"></canvas>
+        </div>
+
+        <!-- Tabla: Tipos de errores más frecuentes -->
+        <div class="chart-card" style="border-color: rgba(249,115,22,0.12);">
+          <div class="chart-header-row">
+            <div class="chart-title" style="color: #f97316;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Tipos de errores detectados
+            </div>
+          </div>
+          <div class="table-responsive" style="margin-top: 8px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Nivel</th>
+                  <th>Total</th>
+                  <th>Último</th>
+                </tr>
+              </thead>
+              <tbody id="table-errores-tipo">
+                <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -984,6 +1071,9 @@
         renderLatenciaChart(latencia.data || []);
         renderFuentesChart(fuentes.data || []);
         renderTablaActividad(porDia.data || []);
+
+        // Cargar datos de salud del sistema (Integrador)
+        await loadErrors();
 
         document.getElementById('last-updated').textContent =
           'Actualizado: ' + new Date().toLocaleTimeString('es-AR');
@@ -1303,27 +1393,177 @@
     }
 
     // ────────────────────────────────────────────────────────────────────────────
+    // SALUD DEL SISTEMA — Integrador Mecanismo 4
+    // ────────────────────────────────────────────────────────────────────────────
+    async function loadErrors() {
+      try {
+        const [errores24h, erroresPorTipo, erroresPorDia] = await Promise.all([
+          db.from('kpi_errores_24h').select('*').single(),
+          db.from('kpi_errores_por_tipo').select('*').limit(10),
+          db.from('kpi_errores_por_dia').select('*').limit(14),
+        ]);
+
+        // KPI Cards de errores
+        if (errores24h.data) {
+          const d = errores24h.data;
+          document.getElementById('kpi-errores-24h').textContent = (d.total_errores_24h || 0);
+          const tasa = d.tasa_errores_pct || 0;
+          document.getElementById('kpi-tasa-errores').textContent = tasa + '%';
+        }
+
+        if (erroresPorTipo.data && erroresPorTipo.data.length > 0) {
+          const topTipo = erroresPorTipo.data[0].tipo || '—';
+          const labels = {
+            'workflow_error': 'Workflow crash',
+            'llm_respuesta_invalida': 'LLM inválido',
+            'schema_change_sospechoso': 'Schema warning'
+          };
+          document.getElementById('kpi-top-error-tipo').textContent = labels[topTipo] || topTipo;
+        }
+
+        // Gráfico de errores por día
+        if (erroresPorDia.data) renderErroresDiaChart(erroresPorDia.data);
+
+        // Tabla de tipos de errores
+        if (erroresPorTipo.data) renderTablaErroresTipo(erroresPorTipo.data);
+
+      } catch (err) {
+        // Si errors_log no existe aún, mostramos mensaje amigable
+        console.warn('Sección Salud del Sistema: tabla errors_log no disponible aún.', err.message);
+        const elems = ['kpi-errores-24h', 'kpi-tasa-errores', 'kpi-top-error-tipo'];
+        elems.forEach(id => { const el = document.getElementById(id); if(el) el.textContent = 'N/A'; });
+        const tbody = document.getElementById('table-errores-tipo');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Ejecutar errors_log_setup.sql en Supabase para activar</td></tr>';
+      }
+    }
+
+    function renderErroresDiaChart(data) {
+      destroyChart('errores-dia');
+      const canvas = document.getElementById('chart-errores-dia');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const gradientRed = ctx.createLinearGradient(0, 0, 0, 250);
+      gradientRed.addColorStop(0, 'rgba(244, 63, 94, 0.8)');
+      gradientRed.addColorStop(1, 'rgba(244, 63, 94, 0.05)');
+
+      const gradientOrange = ctx.createLinearGradient(0, 0, 0, 250);
+      gradientOrange.addColorStop(0, 'rgba(249, 115, 22, 0.8)');
+      gradientOrange.addColorStop(1, 'rgba(249, 115, 22, 0.05)');
+
+      const sorted = [...data].reverse();
+      const labels = sorted.map(r => {
+        const d = new Date(r.dia);
+        return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+      });
+
+      charts['errores-dia'] = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Errores críticos',
+              data: sorted.map(r => r.errores_criticos || 0),
+              backgroundColor: gradientRed,
+              borderColor: PALETTE.red,
+              borderWidth: 1.5,
+              borderRadius: 5,
+              hoverBackgroundColor: PALETTE.red,
+            },
+            {
+              label: 'Advertencias',
+              data: sorted.map(r => r.advertencias || 0),
+              backgroundColor: gradientOrange,
+              borderColor: PALETTE.orange,
+              borderWidth: 1.5,
+              borderRadius: 5,
+              hoverBackgroundColor: PALETTE.orange,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                boxWidth: 10,
+                usePointStyle: true,
+                pointStyle: 'circle',
+                padding: 18,
+                font: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0, font: { size: 11 } },
+              grid: { color: PALETTE.gridLine }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTablaErroresTipo(data) {
+      const tbody = document.getElementById('table-errores-tipo');
+      if (!tbody) return;
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Sin errores registrados 🎉</td></tr>';
+        return;
+      }
+      const tipoLabels = {
+        'workflow_error': 'Workflow crash',
+        'llm_respuesta_invalida': 'LLM inválido',
+        'schema_change_sospechoso': 'Schema warning',
+      };
+      const levelColors = {
+        'ERROR': '#f43f5e',
+        'WARN':  '#f97316',
+        'INFO':  '#06b6d4',
+      };
+      tbody.innerHTML = data.map(r => {
+        const labelTipo = tipoLabels[r.tipo] || r.tipo || 'desconocido';
+        const color = levelColors[r.level] || 'var(--text-muted)';
+        const ultimo = r.ultimo_ocurrido ? new Date(r.ultimo_ocurrido).toLocaleDateString('es-AR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+        return `
+      <tr>
+        <td style="font-weight:600;">${labelTipo}</td>
+        <td><span class="badge" style="background:${color}18;color:${color};border-color:${color}33;">${r.level}</span></td>
+        <td style="font-variant-numeric:tabular-nums;font-weight:700;">${r.total}</td>
+        <td style="color:var(--text-muted);font-size:12px;">${ultimo}</td>
+      </tr>`;
+      }).join('');
+    }
+
+
+    // ────────────────────────────────────────────────────────────────────────────
     // TABLE: Actividad Reciente por Día
     // ────────────────────────────────────────────────────────────────────────────
     function renderTablaActividad(data) {
       const tbody = document.getElementById('table-actividad');
+      if (!tbody) return;
       if (!data.length) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:30px;">No hay datos de actividad para mostrar.</td></tr>';
         return;
       }
-      
+
       const max = Math.max(...data.map(r => r.total_queries));
       tbody.innerHTML = data.map((r) => {
         const barPct = max > 0 ? Math.round((r.total_queries / max) * 100) : 0;
         const dia = new Date(r.dia).toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'short' });
-        
+
         // Capitalizar primer letra del día
         const diaCapitalizado = dia.charAt(0).toUpperCase() + dia.slice(1);
-        
+
         // Asignación de badges estéticas
         let badgeCls = 'badge-green';
         let trendHtml = '<span class="trend-indicator trend-low">⬇ Bajo</span>';
-        
+
         if (barPct >= 75) {
           badgeCls = 'badge-purple';
           trendHtml = '<span class="trend-indicator trend-high">⚡ Elevado</span>';
@@ -1331,7 +1571,7 @@
           badgeCls = 'badge-blue';
           trendHtml = '<span class="trend-indicator trend-medium">📈 Estable</span>';
         }
-        
+
         return `
       <tr>
         <td style="font-weight:600;">${diaCapitalizado}</td>
@@ -1352,6 +1592,7 @@
     // ────────────────────────────────────────────────────────────────────────────
     // CARGA INICIAL AL INICIAR LA PÁGINA
     // ────────────────────────────────────────────────────────────────────────────
+
     loadAll();
   </script>
 </body>

@@ -1,0 +1,128 @@
+{
+    "name": "Error Trigger - Alertas Admin",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "err-trigger-001",
+            "name": "Error Trigger",
+            "type": "n8n-nodes-base.errorTrigger",
+            "typeVersion": 1,
+            "position": [-400, 400]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Mecanismo 1 — Filtrar datos sensibles antes de notificar\n// NO exponer API keys ni credentials en el mensaje de alerta\nconst errData = $input.first().json;\n\nconst workflowName = errData.workflow?.name || 'desconocido';\nconst nodeName = errData.execution?.error?.node?.name || 'desconocido';\nconst errorMsg = errData.execution?.error?.message || 'sin mensaje';\nconst executionId = errData.execution?.id || 'desconocido';\nconst ts = new Date().toISOString();\n\n// Filtrar mensajes que puedan contener credentials\nconst msgLimpio = errorMsg\n  .replace(/token=[^&\\s]*/gi, 'token=***')\n  .replace(/key=[^&\\s]*/gi, 'key=***')\n  .replace(/password=[^&\\s]*/gi, 'password=***')\n  .replace(/apikey=[^&\\s]*/gi, 'apikey=***')\n  .substring(0, 300);\n\n// Anti-spam: limitar a 1 alerta por hora por tipo de error\nconst staticData = $getWorkflowStaticData('global');\nconst claveError = `${workflowName}::${nodeName}`.replace(/\\s/g, '_');\nconst ahora = Date.now();\nconst ultimaAlerta = staticData[claveError] || 0;\nconst UNA_HORA = 60 * 60 * 1000;\n\nif (ahora - ultimaAlerta < UNA_HORA) {\n  return [{ json: { _silenciado: true, claveError, minutosRestantes: Math.round((UNA_HORA - (ahora - ultimaAlerta)) / 60000) } }];\n}\n\n// Registrar timestamp de esta alerta\nstaticData[claveError] = ahora;\n\nconst texto = `⚠️ *Error en workflow n8n*\n\n📋 *Workflow:* ${workflowName}\n🔴 *Nodo:* ${nodeName}\n💬 *Mensaje:* ${msgLimpio}\n🕐 *Timestamp:* ${ts}\n🆔 *Execution ID:* ${executionId}`;\n\nreturn [{ json: { texto, workflowName, nodeName, errorMsg: msgLimpio, ts, executionId, _silenciado: false } }];"
+            },
+            "id": "err-filter-002",
+            "name": "Filtrar Error (Anti-spam + Anti-credential leak)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [-160, 400]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-not-silenced",
+                            "leftValue": "={{ $json._silenciado }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "notEquals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "err-if-silenced-003",
+            "name": "IF No Silenciado",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [80, 400]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://telegram-proxy-hb1r.vercel.app/api/telegram?token={{ $env.TELEGRAM_BOT_TOKEN }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ chat_id: 5784376241, text: $json.texto, parse_mode: 'Markdown' }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "err-telegram-004",
+            "name": "Telegram Alerta Admin",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [320, 300],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.SUPABASE_URL }}/rest/v1/errors_log",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+                        { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+                        { "name": "Content-Type", "value": "application/json" },
+                        { "name": "Prefer", "value": "return=minimal" }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ ts: $json.ts, level: 'ERROR', workflow: $json.workflowName, nodo: $json.nodeName, tipo: 'workflow_error', mensaje: $json.errorMsg, detalle: 'execution_id:' + $json.executionId }) }}",
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "id": "err-supabase-005",
+            "name": "Supabase: Insert errors_log (Error Trigger)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [320, 500],
+            "continueOnFail": true
+        }
+    ],
+    "connections": {
+        "Error Trigger": {
+            "main": [[{ "node": "Filtrar Error (Anti-spam + Anti-credential leak)", "type": "main", "index": 0 }]]
+        },
+        "Filtrar Error (Anti-spam + Anti-credential leak)": {
+            "main": [[{ "node": "IF No Silenciado", "type": "main", "index": 0 }]]
+        },
+        "IF No Silenciado": {
+            "main": [
+                [
+                    { "node": "Telegram Alerta Admin", "type": "main", "index": 0 },
+                    { "node": "Supabase: Insert errors_log (Error Trigger)", "type": "main", "index": 0 }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    },
+    "tags": [
+        { "name": "integrador" },
+        { "name": "error-handling" }
+    ]
+}

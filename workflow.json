@@ -327,6 +327,106 @@
         },
         {
             "parameters": {
+                "jsCode": "// Mecanismo 3 — Schema Versioning del Scraper\n// Detecta si el scraper extrajo muy pocos eventos (posible cambio de HTML)\nconst items = $input.all();\nconst cantidad = items.length;\nconst fuente = items[0]?.json?.fuente || 'desconocida';\n\nif (cantidad < 5) {\n  return [{ json: {\n    _schema_warn: true,\n    level: 'WARN',\n    tipo: 'schema_change_sospechoso',\n    fuente,\n    cantidad,\n    ts: new Date().toISOString(),\n    mensaje: `Solo ${cantidad} eventos extraídos (umbral: 5). Posible cambio en estructura HTML de fuente: ${fuente}`,\n    detalle: `items_count:${cantidad}::fuente:${fuente}`\n  } }];\n}\nreturn items;"
+            },
+            "id": "schema-version-001",
+            "name": "Code: Schema Versioning Scraper",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                784,
+                1344
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "cond-schema-ok",
+                            "leftValue": "={{ $json._schema_warn }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "notEquals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "schema-if-001",
+            "name": "IF Schema OK",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                880,
+                1344
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.SUPABASE_URL }}/rest/v1/errors_log",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+                        { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+                        { "name": "Content-Type", "value": "application/json" },
+                        { "name": "Prefer", "value": "return=minimal" }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ ts: $json.ts, level: $json.level, workflow: 'Chatbot v3 - TP2', nodo: 'Code: Schema Versioning Scraper', tipo: $json.tipo, mensaje: $json.mensaje, detalle: $json.detalle }) }}",
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "id": "schema-log-001",
+            "name": "Supabase: Insert errors_log (Schema Warn)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1080,
+                1488
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://telegram-proxy-hb1r.vercel.app/api/telegram?token={{ $env.TELEGRAM_BOT_TOKEN }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ chat_id: 5784376241, text: '⚠️ *Schema Warning*\\n\\nEl scraper extrajo solo ' + $json.cantidad + ' eventos de *' + $json.fuente + '*.\\n\\nPosible cambio de estructura HTML en la fuente.\\nRevisar la URL y el parser.', parse_mode: 'Markdown' }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "schema-telegram-001",
+            "name": "Telegram: Alerta Schema Warn (Admin)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1080,
+                1632
+            ],
+            "retryOnFail": true,
+            "maxTries": 3,
+            "waitBetweenTries": 5000,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
                 "jsCode": "const ahora = new Date();\nconst items = $input.all();\n\nconst validos = items\n  .filter(item =\u003e {\n    const e = item.json;\n    if (!e.titulo) return false; \n    if (e._skip || e._empty) return false;\n    \n    if (e.fecha_iso) {\n      try {\n        const fecha = new Date(e.fecha_iso);\n        if (isNaN(fecha.getTime())) return true;\n        if (fecha \u003c ahora) return false;\n      } catch (err) {}\n    }\n    return true;\n  })\n  .map(item =\u003e ({\n    json: {\n      titulo: String(item.json.titulo || \u0027\u0027).substring(0, 500),\n      fecha_original: String(item.json.fecha_original || \u0027\u0027),\n      fecha_iso: item.json.fecha_iso || null,\n      categoria: String(item.json.categoria || \u0027cultura\u0027),\n      ubicacion: String(item.json.ubicacion || \u0027Córdoba\u0027).substring(0, 300),\n      link: item.json.link ? String(item.json.link).substring(0, 1000) : \u0027\u0027,\n      fuente: String(item.json.fuente || \u0027Web\u0027).substring(0, 100),\n      descripcion: String(item.json.descripcion || \u0027\u0027).substring(0, 1000),\n      fuente_tipo: String(item.json.fuente_tipo || \u0027http\u0027)\n    }\n  }));\n\n// Schema versioning: alerta al admin si se extraen 0 eventos válidos\nif (validos.length === 0) {\n  return [{ json: { _empty: true, total: 0 } }];\n}\nreturn validos;"
             },
             "id": "2422b334-c06e-4311-b849-21e7f05e0fb8",
@@ -934,13 +1034,22 @@
                     },
                     "conditions": [
                         {
-                            "id": "cond-llm-ok",
-                            "leftValue": "={{ $json.output ?? \u0027\u0027 }}",
+                            "id": "cond-llm-not-empty",
+                            "leftValue": "={{ $json.output ?? '' }}",
                             "rightValue": "",
                             "operator": {
                                 "type": "string",
                                 "operation": "notEmpty",
                                 "singleValue": true
+                            }
+                        },
+                        {
+                            "id": "cond-llm-min-length",
+                            "leftValue": "={{ ($json.output ?? '').length }}",
+                            "rightValue": 20,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
                             }
                         }
                     ],
@@ -956,6 +1065,36 @@
                 368,
                 608
             ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.SUPABASE_URL }}/rest/v1/errors_log",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+                        { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+                        { "name": "Content-Type", "value": "application/json" },
+                        { "name": "Prefer", "value": "return=minimal" }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ ts: $now.toISO(), level: 'ERROR', workflow: 'Chatbot v3 - TP2', nodo: 'AI Agent Colo1', tipo: 'llm_respuesta_invalida', mensaje: 'Respuesta del LLM vacía o menor a 20 caracteres', detalle: String($json.output || '').substring(0, 300) }) }}",
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "id": "llm-err-log-001",
+            "name": "Supabase: Insert errors_log (LLM Error)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                576,
+                1000
+            ],
+            "continueOnFail": true
         },
         {
             "parameters": {
@@ -1388,7 +1527,47 @@
             "main": [
                 [
                     {
+                        "node": "Code: Schema Versioning Scraper",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code: Schema Versioning Scraper": {
+            "main": [
+                [
+                    {
+                        "node": "IF Schema OK",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Schema OK": {
+            "main": [
+                [
+                    {
                         "node": "Code: Estandarizar y Filtrar1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Supabase: Insert errors_log (Schema Warn)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Supabase: Insert errors_log (Schema Warn)": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram: Alerta Schema Warn (Admin)",
                         "type": "main",
                         "index": 0
                     }
@@ -1540,6 +1719,17 @@
                 [
                     {
                         "node": "Log Error LLM en Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Log Error LLM en Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase: Insert errors_log (LLM Error)",
                         "type": "main",
                         "index": 0
                     }
